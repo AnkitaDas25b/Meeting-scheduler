@@ -95,7 +95,8 @@ function App() {
     })
       .then(response => {
         
-        return response.json().then(data => {
+        return response.json()
+        .then(data => {
           if (!response.ok) throw new Error(data.error || "Error creating space");
           return data;
           
@@ -116,13 +117,18 @@ function App() {
     fetch(`${BACKEND_URL}/spaces/${spaceCode}`)
       .then(response => {
        
-        return response.json().then(data => {
+        return response.json()
+        .then(data => {
           if (!response.ok) throw new Error(data.error || "Space not found");
           return data;
         });
       })
       .then(data => {
-        setCurrentSpace(data);
+        if (data.error) {
+        alert(data.error); // This will cleanly show "Space not found"
+      } else {
+        setCurrentSpace(data); // Only set it if it's a valid room document!
+      }
 
       })
       .catch(err => alert(err.message));

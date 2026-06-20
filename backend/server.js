@@ -3,8 +3,11 @@ const express = require('express');
 const mongoose = require('mongoose');
 
 const app = express();
+const cors = require('cors');
 
 app.use(express.json());  
+app.use(cors());
+
 
 //connecting to db
 const MONGO_URI = "mongodb://127.0.0.1:27017/meetingScheduler";
@@ -75,7 +78,7 @@ app.post('/spaces/:code/schedule', (req, res) => {
       
       
       const parsedDateTime = new Date(startTime);
-      
+
       space.meetings.push({ title, startTime :parsedDateTime, creator });
       console.log(space);
 

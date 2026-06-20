@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 
+const BACKEND_URL = "https://meeting-scheduler-55rj.onrender.com";
+
 function App() {
   const [username, setUsername] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -19,7 +21,7 @@ function App() {
     if (!currentSpace || !currentSpace.code ) return;
    
     const syncInterval = setInterval(() => {
-      fetch(`/spaces/${currentSpace.code}`)
+      fetch(`${BACKEND_URL}/spaces/${currentSpace.code}`)
         .then(response => {
           if (response.ok) return response.json();
          
@@ -85,7 +87,7 @@ function App() {
   const createSpace = () => {
     if (!spaceName || !spaceCode) return alert("Fill in Space Name and Code!");
     
-    fetch('/spaces/create', {
+    fetch('${BACKEND_URL}/spaces/create', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ spaceName, code: spaceCode })
@@ -111,7 +113,7 @@ function App() {
   const joinSpace = () => {
     if (!spaceCode) return alert("Enter a space code!");
 
-    fetch(`/spaces/${spaceCode}`)
+    fetch(`${BACKEND_URL}/spaces/${spaceCode}`)
       .then(response => {
        
         return response.json().then(data => {
@@ -131,7 +133,7 @@ function App() {
     
     if (!meetTitle || !meetTime) return alert("Fill out all meeting details!");
 
-    fetch(`/spaces/${currentSpace.code}/schedule`, {
+    fetch(`${BACKEND_URL}/spaces/${currentSpace.code}/schedule`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

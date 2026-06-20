@@ -10,7 +10,8 @@ app.use(cors());
 
 
 //connecting to db
-const MONGO_URI = "mongodb://127.0.0.1:27017/meetingScheduler";
+//const MONGO_URI = "mongodb://127.0.0.1:27017/meetingScheduler";
+const MONGO_URI = "mongodb+srv://statusUser:tanisha27@cluster0.noq6jgg.mongodb.net/?appName=Cluster0";
 mongoose.connect(MONGO_URI)
   .then(() => console.log(" MongoDB Connected "))
   .catch(err => console.error( err));

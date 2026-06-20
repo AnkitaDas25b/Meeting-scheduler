@@ -87,7 +87,7 @@ function App() {
   const createSpace = () => {
     if (!spaceName || !spaceCode) return alert("Fill in Space Name and Code!");
     
-    fetch('${BACKEND_URL}/spaces/create', {
+    fetch(`${BACKEND_URL}/spaces/create`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ spaceName, code: spaceCode })

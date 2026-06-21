@@ -77,12 +77,7 @@ function App() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ spaceName, code: spaceCode })
     })
-      .then(response => {
-        return response.json().then(data => {
-          if (!response.ok) throw new Error(data.error || "Error creating space");
-          return data;
-        });
-      })
+      .then(response => response.json())
       .then(data => {
         if (data.error) {
           triggerPopup(data.error); 
@@ -91,19 +86,14 @@ function App() {
           triggerPopup(`Space "${data.name}" Created!`);
         } 
       })
-      .catch(err => triggerPopup(err.message || "Server connection error"));
+      .catch(err => triggerPopup("Server connection error or room code already exists"));
   };
 
   const joinSpace = () => {
     if (!spaceCode) return triggerPopup("Enter a space code!");
 
     fetch(`${BACKEND_URL}/spaces/${spaceCode}`)
-      .then(response => {
-        return response.json().then(data => {
-          if (!response.ok) throw new Error(data.error || "Space not found");
-          return data;
-        });
-      })
+      .then(response => response.json())
       .then(data => {
         if (data.error) {
           triggerPopup(data.error);
@@ -111,7 +101,7 @@ function App() {
           setCurrentSpace(data); 
         }
       })
-      .catch(err => triggerPopup(err.message));
+      .catch(err => triggerPopup("Space not found or connection failed"));
   };
 
   const scheduleMeeting = (e) => {
@@ -128,21 +118,20 @@ function App() {
         creator: username
       })
     })
-      .then(response => {
-        return response.json().then(data => {
-          if (!response.ok) throw new Error(data.error || "Error scheduling meeting");
-          return data;
-        });
-      })
+      .then(response => response.json())
       .then(data => {
-        setCurrentSpace(data); 
-        setMeetTitle('');     
-        setMeetTime('');      // Resets calendar input elements
-        triggerPopup("Meeting scheduled successfully!");
+        if (data.error) {
+          triggerPopup(data.error);
+        } else {
+          setCurrentSpace(data); 
+          setMeetTitle('');     
+          setMeetTime('');
+          triggerPopup("Meeting scheduled successfully!");
+        }
       })
-      .catch(err => triggerPopup(err.message));
+      .catch(err => triggerPopup("Failed to schedule meeting. Try again."));
   };
-
+  
   if (!isLoggedIn) {
     return (
       <div className="card" style={{ marginTop: '100px', textAlign: 'center' }}>

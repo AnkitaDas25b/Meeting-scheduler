@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import './App.css';
 
@@ -7,7 +6,7 @@ const BACKEND_URL = "https://meeting-scheduler-55rj.onrender.com";
 function App() {
   const [username, setUsername] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  //if false, show the Login page; if true, show the Dashboard).
+  // if false, show the Login page; if true, show the Dashboard).
   const [spaceCode, setSpaceCode] = useState('');
   const [spaceName, setSpaceName] = useState('');
   const [currentSpace, setCurrentSpace] = useState(null);
@@ -20,118 +19,87 @@ function App() {
   const [popupMessage, setPopupMessage] = useState(''); 
   const [showPopup, setShowPopup] = useState(false);
 
-  
-   const triggerPopup = (msg) => {
-  setPopupMessage(msg);
-  setShowPopup(true);
+  const triggerPopup = (msg) => {
+    setPopupMessage(msg);
+    setShowPopup(true);
   };
 
-  
   useEffect(() => {
-    if (!currentSpace || !currentSpace.code ) return;
+    if (!currentSpace || !currentSpace.code) return;
    
     const syncInterval = setInterval(() => {
       fetch(`${BACKEND_URL}/spaces/${currentSpace.code}`)
         .then(response => {
           if (response.ok) return response.json();
-         
           throw new Error("Sync failed");
         })
         .then(updatedData => {
-         
           setCurrentSpace(updatedData);
         })
         .catch(err => console.log("Background sync paused:", err.message));
     }, 4000);
 
     return () => clearInterval(syncInterval);
-    
   }, [currentSpace?.code]);
 
-   useEffect(() => {
- 
-  if (!currentSpace || !currentSpace.meetings) return;
+  useEffect(() => {
+    if (!currentSpace || !currentSpace.meetings) return;
 
-  
-  const alertInterval = setInterval(() => {
-    
-    const now = Date.now(); // Current time in milliseconds
+    const alertInterval = setInterval(() => {
+      const now = Date.now(); // Current time in milliseconds
 
-    
-    currentSpace.meetings.forEach((meeting) => {
-      
-      const meetTime = new Date(meeting.startTime).getTime();
-      const secondsRemaining = Math.floor((meetTime - now) / 1000);
+      currentSpace.meetings.forEach((meeting) => {
+        const meetTime = new Date(meeting.startTime).getTime();
+        const secondsRemaining = Math.floor((meetTime - now) / 1000);
+        const meetingIdentifier = meeting._id || meeting.title;
+        const alreadyAlerted = trackedAlerts[meetingIdentifier];
 
-      
-      const meetingIdentifier = meeting._id || meeting.title;
+        if (secondsRemaining === 300 && !alreadyAlerted) {
+          setTrackedAlerts((prev) => ({ ...prev, [meetingIdentifier]: true }));
+          setNotification(`ALERT: "${meeting.title}" is starting in 5 minutes!`);
+        }
+      });
+    }, 1000);
 
-      
-      const alreadyAlerted = trackedAlerts[meetingIdentifier];
-
-      
-      if (secondsRemaining === 300 && !alreadyAlerted) {
-        
-       
-        setTrackedAlerts((prev) => ({ ...prev, [meetingIdentifier]: true }));
-        
-       
-        setNotification(`ALERT: "${meeting.title}" is starting in 5 minutes!`);
-      }
-    });
-
-  }, 1000);
-
-
-  return () => clearInterval(alertInterval);
-
-}, [currentSpace, trackedAlerts]); 
-
+    return () => clearInterval(alertInterval);
+  }, [currentSpace, trackedAlerts]); 
 
   const handleLogin = (e) => {
     e.preventDefault();
     setIsLoggedIn(true);
   };
 
-  
   const createSpace = () => {
-    if (!spaceName || !spaceCode) return alert("Fill in Space Name and Code!");
+    if (!spaceName || !spaceCode) return triggerPopup("Fill in Space Name and Code!");
     
     fetch(`${BACKEND_URL}/spaces/create`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ spaceName, code: spaceCode })
-      
     })
       .then(response => {
-        
-        return response.json()
-        .then(data => {
+        return response.json().then(data => {
           if (!response.ok) throw new Error(data.error || "Error creating space");
           return data;
-          
         });
       })
       .then(data => {
-       if (data.error) {
-        triggerPopup(data.error); 
-    } else {
-        setCurrentSpace(data);
-        triggerPopup(`Space "${data.name}" Created!`);
-    } 
+        if (data.error) {
+          triggerPopup(data.error); 
+        } else {
+          setCurrentSpace(data);
+          triggerPopup(`Space "${data.name}" Created!`);
+        } 
       })
-      .catch(err => triggerPopup("Server connection error"));
+      .catch(err => triggerPopup(err.message || "Server connection error"));
   };
 
-
   const joinSpace = () => {
-    if (!spaceCode) return alert("Enter a space code!");
+    if (!spaceCode) return triggerPopup("Enter a space code!");
 
     fetch(`${BACKEND_URL}/spaces/${spaceCode}`)
       .then(response => {
-       
-        return response.json()
-        .then(data => {
+        return response.json().then(data => {
           if (!response.ok) throw new Error(data.error || "Space not found");
           return data;
         });
@@ -139,19 +107,17 @@ function App() {
       .then(data => {
         if (data.error) {
           triggerPopup(data.error);
-      } else {
-        setCurrentSpace(data); 
-        if (spaceName) triggerPopup(`Space "${data.name}" Created!`);
-      }
-
+        } else {
+          setCurrentSpace(data); 
+        }
       })
-      .catch(err => alert(err.message));
+      .catch(err => triggerPopup(err.message));
   };
 
   const scheduleMeeting = (e) => {
     e.preventDefault();
     
-    if (!meetTitle || !meetTime) return alert("Fill out all meeting details!");
+    if (!meetTitle || !meetTime) return triggerPopup("Fill out all meeting details!");
 
     fetch(`${BACKEND_URL}/spaces/${currentSpace.code}/schedule`, {
       method: 'POST',
@@ -164,19 +130,17 @@ function App() {
     })
       .then(response => {
         return response.json().then(data => {
-          
           if (!response.ok) throw new Error(data.error || "Error scheduling meeting");
           return data;
         });
       })
       .then(data => {
         setCurrentSpace(data); 
-
         setMeetTitle('');     
-        setMeetTime('');      // Resets calendar for next meeting
-        alert("Meeting scheduled successfully");
+        setMeetTime('');      // Resets calendar input elements
+        triggerPopup("Meeting scheduled successfully!");
       })
-      .catch(err => alert(err.message));
+      .catch(err => triggerPopup(err.message));
   };
 
   if (!isLoggedIn) {
@@ -214,7 +178,6 @@ function App() {
       {!currentSpace ? (
         <div className="auth-container">
           {activePage === 'join' ? (
-            
             <div className="card">
               <h3>Join an Existing Space</h3>
               <form onSubmit={(e) => { e.preventDefault(); joinSpace(); }}>
@@ -237,7 +200,6 @@ function App() {
               </p>
             </div>
           ) : (
-            
             <div className="card">
               <h3>Create a Meeting Space</h3>
               <form onSubmit={(e) => { e.preventDefault(); createSpace(); }}>
@@ -268,7 +230,6 @@ function App() {
           )}
         </div>
       ) : (
-        
         <div>
           <div className="card">
             <h3>Space: {currentSpace.name} (Code: <span style={{color: '#00b4d8'}}>{currentSpace.code}</span>)</h3>
@@ -303,7 +264,6 @@ function App() {
         </div>
       )}
 
-     
       {showPopup && (
         <div className="modal-overlay">
           <div className="modal-card">

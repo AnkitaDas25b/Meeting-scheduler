@@ -16,6 +16,16 @@ function App() {
   const [notification, setNotification] = useState('');
   const [trackedAlerts, setTrackedAlerts] = useState({});
 
+  const [activePage, setActivePage] = useState('join'); 
+  const [popupMessage, setPopupMessage] = useState(''); 
+  const [showPopup, setShowPopup] = useState(false);
+
+  
+   const triggerPopup = (msg) => {
+  setPopupMessage(msg);
+  setShowPopup(true);
+  };
+
   
   useEffect(() => {
     if (!currentSpace || !currentSpace.code ) return;
@@ -103,11 +113,14 @@ function App() {
         });
       })
       .then(data => {
-       
+       if (data.error) {
+        triggerPopup(data.error); 
+    } else {
         setCurrentSpace(data);
-        alert(`Space "${data.name}" Created!`);
+        triggerPopup(`Space "${data.name}" Created!`);
+    } 
       })
-      .catch(err => alert(err.message));
+      .catch(err => triggerPopup("Server connection error"));
   };
 
 
@@ -125,9 +138,10 @@ function App() {
       })
       .then(data => {
         if (data.error) {
-        alert(data.error); // This will cleanly show "Space not found"
+          triggerPopup(data.error);
       } else {
-        setCurrentSpace(data); // Only set it if it's a valid room document!
+        setCurrentSpace(data); 
+        if (spaceName) triggerPopup(`Space "${data.name}" Created!`);
       }
 
       })
@@ -187,7 +201,7 @@ function App() {
     <div>
       <header>
         <h2>Hello, {username}! </h2>
-           {currentSpace && <button onClick={() => setCurrentSpace(null)}>Leave Space</button> } 
+        {currentSpace && <button onClick={() => setCurrentSpace(null)}>Leave Space</button>} 
       </header> 
 
       {notification && (
@@ -198,26 +212,63 @@ function App() {
       )}
 
       {!currentSpace ? (
-        
-        <div className="grid">
-          <div className="card">
-            <h3>Create a Meeting Space</h3>
-            <form onSubmit={(e) => { e.preventDefault(); createSpace(); }}>
-              <input type="text" placeholder="Space Name" onChange={e => setSpaceName(e.target.value)} required />
-              <input type="text" placeholder="Unique Code" onChange={e => setSpaceCode(e.target.value)} required />
-              <button type="submit">Create & Join</button>
-            </form>
-          </div>
-
-          <div className="card">
-            <h3>Join an Existing Space</h3>
-            <form onSubmit={(e) => { e.preventDefault(); joinSpace(); }}>
-              <input type="text" placeholder="Enter Space Code" onChange={e => setSpaceCode(e.target.value)} required />
-              <button type="submit">Join Space</button>
-            </form>
-          </div>
+        <div className="auth-container">
+          {activePage === 'join' ? (
+            
+            <div className="card">
+              <h3>Join an Existing Space</h3>
+              <form onSubmit={(e) => { e.preventDefault(); joinSpace(); }}>
+                <input 
+                  type="text" 
+                  placeholder="Enter Space Code" 
+                  onChange={e => setSpaceCode(e.target.value)} 
+                  required 
+                />
+                <button type="submit">Join Space</button>
+              </form>
+              <p style={{ marginTop: '15px', fontSize: '14px' }}>
+                Need a new room?{' '}
+                <span 
+                  style={{ color: '#00b4d8', cursor: 'pointer', textDecoration: 'underline' }} 
+                  onClick={() => setActivePage('create')}
+                >
+                  Create a Meeting Space
+                </span>
+              </p>
+            </div>
+          ) : (
+            
+            <div className="card">
+              <h3>Create a Meeting Space</h3>
+              <form onSubmit={(e) => { e.preventDefault(); createSpace(); }}>
+                <input 
+                  type="text" 
+                  placeholder="Space Name" 
+                  onChange={e => setSpaceName(e.target.value)} 
+                  required 
+                />
+                <input 
+                  type="text" 
+                  placeholder="Unique Code" 
+                  onChange={e => setSpaceCode(e.target.value)} 
+                  required 
+                />
+                <button type="submit">Create & Join</button>
+              </form>
+              <p style={{ marginTop: '15px', fontSize: '14px' }}>
+                Already have a code?{' '}
+                <span 
+                  style={{ color: '#00b4d8', cursor: 'pointer', textDecoration: 'underline' }} 
+                  onClick={() => setActivePage('join')}
+                >
+                  Join an Existing Space
+                </span>
+              </p>
+            </div>
+          )}
         </div>
       ) : (
+        
         <div>
           <div className="card">
             <h3>Space: {currentSpace.name} (Code: <span style={{color: '#00b4d8'}}>{currentSpace.code}</span>)</h3>
@@ -227,14 +278,12 @@ function App() {
             <h3>Schedule a Simple Meeting</h3>
             <form onSubmit={scheduleMeeting}>
               <input type="text" placeholder="Meeting Title" value={meetTitle} onChange={e => setMeetTitle(e.target.value)} required />
-             
               <input 
                 type="datetime-local" 
-                // placeholder="YYYY-MM-DD (e.g., 2026-06-25 14:30)"
                 value={meetTime} 
                 onChange={e => setMeetTime(e.target.value)} 
-                 required 
-    />
+                required 
+              />
               <button type="submit">Schedule Meeting</button>
             </form>
           </div>
@@ -250,6 +299,17 @@ function App() {
                 ))}
               </ul>
             )}
+          </div>
+        </div>
+      )}
+
+     
+      {showPopup && (
+        <div className="modal-overlay">
+          <div className="modal-card">
+            <h4>Notification</h4>
+            <p>{popupMessage}</p>
+            <button onClick={() => setShowPopup(false)}>OK</button>
           </div>
         </div>
       )}
